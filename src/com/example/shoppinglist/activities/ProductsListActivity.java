@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.example.shoppinglist.CloudEndpointUtils;
 import com.example.shoppinglist.R;
@@ -59,7 +60,7 @@ public class ProductsListActivity extends ListActivity {
 	    adapter.notifyDataSetChanged();
 	  }
 	
-	private class AddToDataStoreTask extends AsyncTask<String, Void, Void> {
+	private class AddToDataStoreTask extends AsyncTask<String, Void, com.example.shoppinglist.productendpoint.model.Product> {
 
 	    /**
 	     * Calls appropriate CloudEndpoint to indicate that user checked into a place.
@@ -68,9 +69,9 @@ public class ProductsListActivity extends ListActivity {
 	     */
 
 		@Override
-		protected Void doInBackground(String... params) {
+		protected com.example.shoppinglist.productendpoint.model.Product doInBackground(String... params) {
 			  com.example.shoppinglist.productendpoint.model.Product product = new com.example.shoppinglist.productendpoint.model.Product ();
-		      
+			  com.example.shoppinglist.productendpoint.model.Product result = new com.example.shoppinglist.productendpoint.model.Product ();
 		      // Set the ID of the store where the user is. 
 		      // This would be replaced by the actual ID in the final version of the code. 
 		      product.setName(params[0].toString());
@@ -85,14 +86,20 @@ public class ProductsListActivity extends ListActivity {
 		      
 
 		      try {
-		        endpoint.insertProduct(product).execute();
+		    	  result = endpoint.insertProduct(product).execute();
 		      } catch (IOException e) {
 		        // TODO Auto-generated catch block
 		        e.printStackTrace();
 		      }
 
-		      return null;
+		      return result;
 		}
+		
+		@Override
+	    protected void onPostExecute(com.example.shoppinglist.productendpoint.model.Product result) {
+			Toast toast = Toast.makeText(getApplicationContext(), result.getId().toString(), Toast.LENGTH_SHORT);
+			toast.show();
+	    }
 	  }
 	
 	

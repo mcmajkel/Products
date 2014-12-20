@@ -13,6 +13,7 @@ public class Preferences {
 	private static final String PREFS = "prefs"; //string for shared preferences file across the app
 	
 	
+	
 	protected static SharedPreferences getApplicationPreferences(Context context){
 		return context.getSharedPreferences(PREFS, context.MODE_PRIVATE);
 	}

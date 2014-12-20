@@ -17,11 +17,11 @@
             android:text="Add New" />
 
         <Button
-            android:id="@+id/delete"
+            android:id="@+id/update"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="onClick"
-            android:text="Delete First" />
+            android:text="Update" />
     </LinearLayout>
 
     <EditText

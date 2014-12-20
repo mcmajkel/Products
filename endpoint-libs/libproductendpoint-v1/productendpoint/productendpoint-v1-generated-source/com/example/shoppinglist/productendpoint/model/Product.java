@@ -98,6 +98,11 @@ public final class Product extends com.google.api.client.json.GenericJson {
   public Product set(String fieldName, Object value) {
     return (Product) super.set(fieldName, value);
   }
+  
+  @Override
+  public String toString() {
+    return name;
+  }
 
   @Override
   public Product clone() {

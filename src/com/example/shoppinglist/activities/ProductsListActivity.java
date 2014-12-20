@@ -1,10 +1,7 @@
 package com.example.shoppinglist.activities;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import android.app.ListActivity;
 import android.app.ProgressDialog;
@@ -14,8 +11,8 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,12 +25,9 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 
 public class ProductsListActivity extends ListActivity {
 
-	private static final String ROOT_URL = "http://172.23.65.248:8888/_ah/api";
+	private static final String ROOT_URL = "http://192.168.0.15:8888/_ah/api";
 	private TextView tv = null;
-    private SimpleAdapter adapter = null;
-    private String[] from = { "name", "id" };
-    private int[] to = { android.R.id.text1, android.R.id.text2 };
-
+	private ArrayAdapter<com.example.shoppinglist.productendpoint.model.Product> adapter = null;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +54,23 @@ public class ProductsListActivity extends ListActivity {
 	    case R.id.update:
 	    	new GetListAsyncTask(ProductsListActivity.this).execute();
 		      break;  
+		      
+	    case R.id.delete:
+	      if (getListAdapter().getCount() > 0) {
+	    	com.example.shoppinglist.productendpoint.model.Product product = (com.example.shoppinglist.productendpoint.model.Product) getListAdapter().getItem(0);
+	    	new RemoveProductAsyncTask().execute(product.getId());
+	        adapter.remove(product);
+	      }
+	      break;
 	    }
+	    
+    
+
 
 	  }
 	
+	
+	//task asynchroniczny do dodawania
 	private class AddToDataStoreTask extends AsyncTask<String, Void, com.example.shoppinglist.productendpoint.model.Product> {
 		Context context;
         private ProgressDialog pd;
@@ -113,6 +120,7 @@ public class ProductsListActivity extends ListActivity {
 	    }
 	  }
 	
+	//task asynchroniczny do pobierania
 	private class GetListAsyncTask extends AsyncTask<Void, Void, CollectionResponseProduct>{
 
 		Context context;
@@ -152,21 +160,32 @@ public class ProductsListActivity extends ListActivity {
 		
 		protected void onPostExecute(CollectionResponseProduct products) {
             pd.dismiss();
-      // Do something with the result.
-            ArrayList<Map<String, String>> list = new ArrayList<Map<String, String>>();
-             List<com.example.shoppinglist.productendpoint.model.Product> _list = products.getItems();
-             
-             for (com.example.shoppinglist.productendpoint.model.Product product : _list) {
-            	 HashMap<String, String> item = new HashMap<String, String>();
-                 item.put("name", product.getName());
-                 item.put("id", "ID: "+product.getId().toString());
-                 list.add(item);
-             }
-             adapter = new SimpleAdapter(ProductsListActivity.this, list,android.R.layout.simple_list_item_2, from, to);
+    		List<com.example.shoppinglist.productendpoint.model.Product> values = products.getItems();
+    		adapter = new ArrayAdapter<com.example.shoppinglist.productendpoint.model.Product>(ProductsListActivity.this, android.R.layout.simple_list_item_1,values);
              setListAdapter(adapter);
     }
 	}
 	
-
-	
+	//task asynchroniczny do usuwania
+	private class RemoveProductAsyncTask extends AsyncTask<Long, Void, Void>{
+		
+		@Override
+		protected Void doInBackground(Long... params) {
+			Long removed_id = params[0];
+			Productendpoint.Builder builder = new Productendpoint.Builder(
+			          AndroidHttp.newCompatibleTransport(), new JacksonFactory(),
+			          null);
+			          
+			      builder = CloudEndpointUtils.updateBuilder(builder);
+			      builder.setRootUrl(ROOT_URL); 
+               try {
+                           Productendpoint service =  builder.build();
+                           service.removeProduct(removed_id).execute();
+               } catch (Exception e) {
+                 Log.d("Could not remove product", e.getMessage(), e);
+                 e.printStackTrace();
+               }
+               return null;
+		}
+	}	
 }

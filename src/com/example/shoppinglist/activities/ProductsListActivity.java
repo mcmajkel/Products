@@ -3,6 +3,7 @@ package com.example.shoppinglist.activities;
 import java.io.IOException;
 import java.util.List;
 
+import android.R.integer;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -25,7 +26,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 
 public class ProductsListActivity extends ListActivity {
 
-	private static final String ROOT_URL = "http://192.168.0.15:8888/_ah/api";
+	private static final String ROOT_URL = "http://192.168.0.10:8888/_ah/api";
 	private TextView tv = null;
 	private ArrayAdapter<com.example.shoppinglist.productendpoint.model.Product> adapter = null;
 	
@@ -58,8 +59,7 @@ public class ProductsListActivity extends ListActivity {
 	    case R.id.delete:
 	      if (getListAdapter().getCount() > 0) {
 	    	com.example.shoppinglist.productendpoint.model.Product product = (com.example.shoppinglist.productendpoint.model.Product) getListAdapter().getItem(0);
-	    	new RemoveProductAsyncTask().execute(product.getId());
-	        adapter.remove(product);
+	    	new RemoveProductAsyncTask(ProductsListActivity.this).execute(product.getId());
 	      }
 	      break;
 	    }
@@ -160,17 +160,40 @@ public class ProductsListActivity extends ListActivity {
 		
 		protected void onPostExecute(CollectionResponseProduct products) {
             pd.dismiss();
-    		List<com.example.shoppinglist.productendpoint.model.Product> values = products.getItems();
-    		adapter = new ArrayAdapter<com.example.shoppinglist.productendpoint.model.Product>(ProductsListActivity.this, android.R.layout.simple_list_item_1,values);
-             setListAdapter(adapter);
+            if(!products.isEmpty()){
+            	List<com.example.shoppinglist.productendpoint.model.Product> values = products.getItems();
+        		adapter = new ArrayAdapter<com.example.shoppinglist.productendpoint.model.Product>(ProductsListActivity.this, android.R.layout.simple_list_item_1,values);
+                 setListAdapter(adapter);
+            }
+            else{
+            	Toast toast = Toast.makeText(getApplicationContext(), "Nothing to retrieve", Toast.LENGTH_SHORT);
+    			toast.show();
+    			if (adapter != null){
+    				adapter.clear();
+    			}
+            }
     }
 	}
 	
 	//task asynchroniczny do usuwania
-	private class RemoveProductAsyncTask extends AsyncTask<Long, Void, Void>{
+	private class RemoveProductAsyncTask extends AsyncTask<Long, Void, Integer>{
 		
+		Context context;
+        private ProgressDialog pd;
+        
+        public RemoveProductAsyncTask(Context context){
+        	this.context = context;
+        }
+        
+        protected void onPreExecute(){ 
+            super.onPreExecute();
+                 pd = new ProgressDialog(context);
+                 pd.setMessage("Deleting product...");
+                 pd.show();    
+         }
+        
 		@Override
-		protected Void doInBackground(Long... params) {
+		protected Integer doInBackground(Long... params) {
 			Long removed_id = params[0];
 			Productendpoint.Builder builder = new Productendpoint.Builder(
 			          AndroidHttp.newCompatibleTransport(), new JacksonFactory(),
@@ -185,7 +208,12 @@ public class ProductsListActivity extends ListActivity {
                  Log.d("Could not remove product", e.getMessage(), e);
                  e.printStackTrace();
                }
-               return null;
+               return 1;
+		}
+		
+		protected void onPostExecute(Integer result) {
+            pd.dismiss();
+            new GetListAsyncTask(ProductsListActivity.this).execute();
 		}
 	}	
 }
